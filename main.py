@@ -4,17 +4,24 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+verbose_mode = False
+
+# Verbose
+if '--verbose' in sys.argv:
+    verbose_mode = True
+    sys.argv.remove('--verbose') 
+
 
 def main():
     #Check for command line argument
     if len(sys.argv) < 2:
-        print("Error: Please add a quoted prompt as an argument")
+        print("Error: Please add a quoted usr_prompt as an argument")
         sys.exit(1)
 
-    prompt = sys.argv[1]
+    usr_prompt = sys.argv[1]
     
     #check for empty/whitespace
-    if not prompt.strip():
+    if not usr_prompt.strip():
         print("Error: The quoted prompt cannot be empty")
         sys.exit(1)
 
@@ -28,7 +35,7 @@ def main():
 
     #create a messages list to be used to maintain context later.
     messages = [
-    types.Content(role="user", parts=[types.Part(text=prompt)]),
+    types.Content(role="user", parts=[types.Part(text=usr_prompt)]),
     ]
 
     # Create Gemini client and get reply:
@@ -38,10 +45,16 @@ def main():
         contents=messages
     )
 
-    # Display results
+    # Result data
     prompt_tokens = response.usage_metadata.prompt_token_count
     response_tokens = response.usage_metadata.candidates_token_count
-    print(f"{response.text} \n Prompt tokens: {prompt_tokens} \n Response tokens: {response_tokens}")
+
+    # Display results with or without verbose
+    if verbose_mode == True:
+        print(f"User prompt:  {usr_prompt} \n Prompt tokens: {prompt_tokens} \n Response tokens: {response_tokens}\n")
+    print(f"{response.text}")
+    
+        
 
 
 if __name__ == "__main__":
