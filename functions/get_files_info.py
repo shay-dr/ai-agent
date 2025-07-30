@@ -17,8 +17,6 @@ def get_files_info(working_directory, directory="."):
         return (f'Error: "{directory}" is not a directory')
     
     # Obtain metadata for items in a directory
-    
-
     try:
 
         directory_ls = ""
