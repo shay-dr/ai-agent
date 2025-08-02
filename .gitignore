@@ -12,3 +12,7 @@ wheels/
 .vscode/
 
 .env
+
+# Test result files
+calculator/lorem.txt
+calculator/pkg/morelorem.txt
