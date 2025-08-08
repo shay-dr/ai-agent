@@ -3,6 +3,7 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+import config
 
 
 def main():
@@ -44,7 +45,8 @@ def main():
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model='gemini-2.0-flash-001',
-        contents=messages
+        contents=messages,
+        config=types.GenerateContentConfig(system_instruction=config.SYSTEM_PROMPT),
     )
 
     # Result data

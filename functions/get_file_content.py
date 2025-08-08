@@ -1,5 +1,5 @@
 import os
-from . import config
+from . import functions_config
 
 
 def get_file_content(working_directory, file_path):
@@ -23,10 +23,10 @@ def get_file_content(working_directory, file_path):
     try:
 
         with open(abs_path, "r") as f:
-            file_content_string = f.read(config.MAX_FILE_CHARS)
+            file_content_string = f.read(functions_config.MAX_FILE_CHARS)
             next_char = f.read(1)
             if next_char:
-                return (f'{file_content_string}[...File "{file_path}" truncated at {config.MAX_FILE_CHARS} characters]')
+                return (f'{file_content_string}[...File "{file_path}" truncated at {functions_config.MAX_FILE_CHARS} characters]')
             return (file_content_string)
     
     except Exception as e:
