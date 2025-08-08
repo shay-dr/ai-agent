@@ -1,5 +1,6 @@
 import os
 import subprocess
+from google.genai import types
 
 def run_python_file(working_directory, file_path, args=[]):
     # This is a dangerous function! Either enhance the security and safeguards or remove before using outside of this project!
@@ -44,3 +45,21 @@ def run_python_file(working_directory, file_path, args=[]):
 
 
 
+schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description=f"Runs a python script after checking if the file_path exists and the file ends with .py.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The path to the Python script file to run, relative to the working directory.",
+            ),
+            "args": types.Schema(
+                type=types.Type.ARRAY,
+                description="An optional list of command-line arguments to pass to the Python script.",
+                items=types.Schema(type=types.Type.STRING),
+            ),
+        },
+    ),
+)

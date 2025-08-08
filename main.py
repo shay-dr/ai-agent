@@ -1,9 +1,10 @@
 import os
 import sys
+import config
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-import config
+from functions.get_files_info import schema_get_files_info
 
 
 def main():
@@ -41,21 +42,41 @@ def main():
     types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
-    # Create Gemini client and get reply:
+    # Define available functions to the LLM
+    available_functions = types.Tool(
+        function_declarations=[
+            schema_get_files_info,
+        ]
+    )
+
+    # Pass available_functions to the config's 'tools' parameter
+    sysconfig = types.GenerateContentConfig(
+        tools=[available_functions],
+        system_instruction=config.SYSTEM_PROMPT  # or system_prompt if that's your variable
+    )
+
+
+
+    # Create Gemini client and get reply: 
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model='gemini-2.0-flash-001',
         contents=messages,
-        config=types.GenerateContentConfig(system_instruction=config.SYSTEM_PROMPT),
+        config=sysconfig,
+    
     )
 
     # Result data
     prompt_tokens = response.usage_metadata.prompt_token_count
     response_tokens = response.usage_metadata.candidates_token_count
 
+
     # Display results with or without verbose
     if verbose_mode:
         print(f"User prompt:  {user_prompt} \n Prompt tokens: {prompt_tokens} \n Response tokens: {response_tokens}\n")
+    if response.function_calls:
+        for function_call_part in response.function_calls:
+            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
     print(f"{response.text}")    
 
 
