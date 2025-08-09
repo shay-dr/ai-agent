@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from functions.get_files_info import schema_get_files_info
+from functions.get_file_content import schema_get_file_content
+from functions.write_file import schema_write_file
+from functions.run_python import schema_run_python_file
+from functions.call_function import call_function
 
 
 def main():
@@ -46,6 +50,9 @@ def main():
     available_functions = types.Tool(
         function_declarations=[
             schema_get_files_info,
+            schema_get_file_content,
+            schema_write_file,
+            schema_run_python_file,
         ]
     )
 
@@ -69,16 +76,27 @@ def main():
     # Result data
     prompt_tokens = response.usage_metadata.prompt_token_count
     response_tokens = response.usage_metadata.candidates_token_count
+    
 
 
     # Display results with or without verbose
     if verbose_mode:
         print(f"User prompt:  {user_prompt} \n Prompt tokens: {prompt_tokens} \n Response tokens: {response_tokens}\n")
+
     if response.function_calls:
         for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-    print(f"{response.text}")    
-
+            function_call_result = call_function(function_call_part, verbose=verbose_mode)
+            if (
+                not function_call_result.parts or
+                not hasattr(function_call_result.parts[0], "function_response") or
+                not hasattr(function_call_result.parts[0].function_response, "response")
+            ):
+                raise RuntimeError("No function response found in Content.")
+            actual_result = function_call_result.parts[0].function_response.response.get("result")
+            if verbose_mode:
+                print(f"-> {actual_result}")
+            else:
+                print(actual_result)
 
 if __name__ == "__main__":
     main()
