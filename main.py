@@ -66,37 +66,67 @@ def main():
 
     # Create Gemini client and get reply: 
     client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model='gemini-2.0-flash-001',
-        contents=messages,
-        config=sysconfig,
-    
-    )
+    max_iterations = config.MAX_ITERS
+    iteration = 0
 
-    # Result data
-    prompt_tokens = response.usage_metadata.prompt_token_count
-    response_tokens = response.usage_metadata.candidates_token_count
-    
+    try:
+            
+        while iteration < max_iterations:
+            iteration += 1
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-001',
+                contents=messages,
+                config=sysconfig,
+            
+            )
+            if response.candidates:
+                for candidate in response.candidates:
+                    messages.append(candidate.content)
+
+            # Result data
+            prompt_tokens = response.usage_metadata.prompt_token_count
+            response_tokens = response.usage_metadata.candidates_token_count
+            
 
 
-    # Display results with or without verbose
-    if verbose_mode:
-        print(f"User prompt:  {user_prompt} \n Prompt tokens: {prompt_tokens} \n Response tokens: {response_tokens}\n")
-
-    if response.function_calls:
-        for function_call_part in response.function_calls:
-            function_call_result = call_function(function_call_part, verbose=verbose_mode)
-            if (
-                not function_call_result.parts or
-                not hasattr(function_call_result.parts[0], "function_response") or
-                not hasattr(function_call_result.parts[0].function_response, "response")
-            ):
-                raise RuntimeError("No function response found in Content.")
-            actual_result = function_call_result.parts[0].function_response.response.get("result")
+            # Display results with or without verbose
             if verbose_mode:
-                print(f"-> {actual_result}")
+                print(f"User prompt:  {user_prompt} \n Prompt tokens: {prompt_tokens} \n Response tokens: {response_tokens}\n")
+
+            if response.function_calls:
+                function_responses = []
+
+                for function_call_part in response.function_calls:
+                    function_call_result = call_function(function_call_part, verbose=verbose_mode)
+                    if (
+                        not function_call_result.parts or
+                        not hasattr(function_call_result.parts[0], "function_response") or
+                        not hasattr(function_call_result.parts[0].function_response, "response")
+                        ):
+                        
+                        raise RuntimeError("No function response found in Content.")
+                    
+                    # add the function result part to function_responses collection
+                    function_responses.append(function_call_result.parts[0])
+
+                    # extract the result for printing:
+                    actual_result = function_call_result.parts[0].function_response.response.get("result")
+
+                    if verbose_mode:
+                        print(f"-> {actual_result}")
+                    else:
+                        print(actual_result)
+
+                messages.append(types.Content(role="user", parts=function_responses))
+            
             else:
-                print(actual_result)
+                if response.text:
+                    print("Final response:")
+                    print(response.text)
+                    break
+
+    except Exception as e:
+        print(f"Error: An unexpected error occurred: {e}")
 
 if __name__ == "__main__":
     main()
